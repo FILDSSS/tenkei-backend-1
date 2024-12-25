@@ -1,7 +1,7 @@
 const Joi = require("joi");
 
 const td_planSchema = Joi.object({
-  Order_No: Joi.string().required(), // ฟิลด์ที่ต้องมีค่า
+  Order_No: Joi.string().required(), 
   Parts_No: Joi.string().required(),
   OdPt_No: Joi.string().optional(),
   Parts_CD: Joi.string().optional().allow(null, ""),

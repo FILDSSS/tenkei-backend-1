@@ -86,6 +86,80 @@ exports.Search_Order_No_AfterUpdate = async (req, res, next) => {
   }
 };
 
+exports.Search_Order_No_AfterUpdate2 = async (req, res, next) => {
+  try {
+    // ล็อกข้อมูลที่รับเข้ามา
+    console.log("Request Body:", req.body);
+
+    // ดึงหมายเลขคำสั่งซื้อจากคำขอ
+    const orderNos = Object.keys(req.body).filter((key) =>
+      key.startsWith("Action_Od_No")
+    );
+
+    // หากไม่มีหมายเลขคำสั่งซื้อใดๆ ใน body ให้แจ้งข้อผิดพลาด
+    if (orderNos.length === 0) {
+      return next(createError(400, "No Action_Od_No fields found"));
+    }
+
+    // ดึงข้อมูลคำสั่งซื้อทีละหมายเลข
+    const orders = {};
+    for (let orderNoField of orderNos) {
+      let orderNo = req.body[orderNoField]; // ดึงค่า Order_No จาก body
+      const index = orderNoField.match(/\d+$/)?.[0]; // ดึงเลขท้าย เช่น 2 จาก "Action_Od_No2"
+
+      if (typeof orderNo !== "string" || orderNo.length < 10) {
+        return next(
+          createError(
+            400,
+            `Order number for ${orderNoField} is required and must be at least 10 characters long`
+          )
+        );
+      }
+
+      // ตรวจสอบความยาวของหมายเลขคำสั่งซื้อ
+      if (orderNo.length === 12) {
+        orderNo = orderNo.substring(0, 10); // ตัดหมายเลขคำสั่งซื้อเหลือ 10 ตัวอักษร
+      }
+
+      // ค้นหาในฐานข้อมูลโดยใช้ Prisma
+      const order = await prisma.tD_Order.findUnique({
+        where: { Order_No: orderNo },
+      });
+
+      // หากไม่พบหมายเลขคำสั่งซื้อ ส่งข้อผิดพลาด
+      if (!order) {
+        return next(createError(404, `Order ${orderNo} not found`));
+      }
+
+      // เพิ่มข้อมูลในรูปแบบที่ต้องการ
+      orders[`Order_No${index}`] = order.Order_No;
+      orders[`Pd_Remark${index}`] = order.Pd_Remark;
+      orders[`I_Completed_Date${index}`] = order.I_Completed_Date;
+      orders[`Shipment_Date${index}`] = order.Shipment_Date;
+      orders[`Pd_Calc_Date${index}`] = order.Pd_Calc_Date;
+      orders[`Price_CD${index}`] = order.Price_CD;
+      orders[`Unit_Price${index}`] = order.Unit_Price;
+      orders[`Od_Progress_CD${index}`] = order.Od_Progress_CD;
+      orders[`Pd_Calc_Qty${index}`] = order.Pd_Calc_Qty;
+      orders[`Calc_Process_Date${index}`] = order.Calc_Process_Date;
+      orders[`Quantity${index}`] = order.Quantity;
+      orders[`Customer_CD${index}`] = order.Customer_CD;
+      orders[`NAV_Name${index}`] = order.NAV_Name;
+      orders[`Unit_CD${index}`] = order.Unit_CD;
+      orders[`Temp_Shipment${index}`] = order.Temp_Shipment;
+    }
+
+    // ส่งข้อมูลกลับในรูปแบบที่ต้องการ
+    return res.status(200).json({
+      status: "success",
+      data: orders,
+    });
+  } catch (err) {
+    console.error("Error searching orders:", err);
+    return next(createError(500, "Internal Server Error"));
+  }
+};
+
 exports.tm_workerg = async (req, res, next) => {
   try {
     // ดึงข้อมูลทั้งหมดจาก TD_Order โดยไม่ต้องใช้เงื่อนไข
@@ -247,9 +321,10 @@ exports.updateCustomer = async (req, res, next) => {
     });
 
     // ส่งคำตอบกลับ
-    return res
-      .status(200)
-      .json({ message: "Customer updated successfully", customer: updateCustomer });
+    return res.status(200).json({
+      message: "Customer updated successfully",
+      customer: updateCustomer,
+    });
   } catch (err) {
     console.error("Error updating Customer:", err);
     return next(createError(500, "Internal Server Error"));
@@ -395,6 +470,99 @@ exports.Product_Docu_Set = async (req, res, next) => {
   } catch (err) {
     // ล็อกข้อผิดพลาดเพื่อการตรวจสอบ
     console.error("Error updating product document:", err);
+    return next(createError(500, "Internal Server Error"));
+  }
+};
+
+exports.editCalc = async (req, res, next) => {
+  try {
+    const { Calc_Process_Date, Pd_Calc_Date } = req.body;
+
+    for (let N = 1; N <= 10; N++) {
+      let Order_No = req.body[`Order_No${N}`];
+
+      // ถ้า Order_No ขาดหายไป จะตรวจสอบว่าเป็นลำดับที่ 2 หรือไม่
+      if (!Order_No) {
+        if (N === 2) {
+          return res
+            .status(200)
+            .json({ message: "Success: Skipped Order_No2 as it is missing" }); // ถ้าเป็นลำดับที่ 2 ให้ส่ง success และหยุด
+        } else {
+          Order_No = ""; // ถ้าเป็นลำดับอื่น ๆ ให้ใช้ค่าว่างแทน
+        }
+      }
+
+      const Pd_Remark = req.body[`Pd_Remark${N}`];
+      const I_Completed_Date = req.body[`I_Completed_Date${N}`];
+      const Shipment_Date = req.body[`Shipment_Date${N}`];
+      const Price_CD = req.body[`Price_CD${N}`];
+      const Unit_Price = req.body[`Unit_Price${N}`];
+      const Quantity = parseFloat(req.body[`Quantity${N}`]);
+
+      const currentOrder = await prisma.tD_Order.findUnique({
+        where: {
+          Order_No: Order_No, // ตรวจสอบว่า Order_No ถูกต้อง
+        },
+      });
+
+      if (!currentOrder) {
+        return res.status(404).json({ error: `Order ${Order_No} not found` });
+      }
+
+      const referencedOrder = await prisma.tD_Order.findUnique({
+        where: {
+          Order_No: currentOrder.Order_No,
+        },
+      });
+
+      if (!referencedOrder) {
+        return res.status(404).json({
+          error: `Referenced Order not found for ${currentOrder.Order_No}`,
+        });
+      }
+
+      const updatedOrder = await prisma.tD_Order.update({
+        where: {
+          Order_No: Order_No,
+        },
+        data: {
+          Pd_Remark: Pd_Remark,
+          I_Completed_Date: I_Completed_Date,
+          Shipment_Date: Shipment_Date,
+          Pd_Calc_Date: Pd_Calc_Date,
+          Price_CD: Price_CD,
+          Unit_Price: Unit_Price,
+          Od_Progress_CD:
+            currentOrder.Od_Progress_CD < "7"
+              ? "7"
+              : currentOrder.Od_Progress_CD,
+          Pd_Split_Qty: referencedOrder.Pd_Split_Qty + Quantity,
+          Calc_Process_Date: Calc_Process_Date,
+          Od_Upd_Date: new Date(),
+
+        },
+      });
+
+      const deletedWipOrder = await prisma.tD_WIP.deleteMany({
+        where: {
+          Order_No: Order_No,
+        },
+      });
+
+      if (deletedWipOrder.count > 0) {
+        console.log(`Deleted WIP records for Order_No: ${Order_No}`);
+      } else {
+        console.log(`No WIP records found to delete for Order_No: ${Order_No}`);
+      }
+
+      if (N === 10) {
+        return res
+          .status(200)
+          .json({ message: "All orders updated successfully" });
+      }
+    }
+  } catch (err) {
+    console.error("Error updating calculation:", err);
     return next(createError(500, "Internal Server Error"));
   }
 };
