@@ -40,6 +40,7 @@ const sorderRoute = require("./src/routes/sorder-route")
 const currencyRoute = require("./src/routes/currency-route")
 const statusRoute = require("./src/routes/status-route")
 const ordercsvRoute = require("./src/routes/navorder-csv-route");
+const importCsvFiles = require("./src/routes/csvimport-route");
 const logger = require("./src/middlewares/logger")
 
 const cors = require("cors")
@@ -88,7 +89,7 @@ app.use("/planlist", planlistRoute)
 app.use("/sorder", sorderRoute)
 app.use("/currency", currencyRoute)
 app.use("/status", statusRoute)
-app.use('/navordercsv', ordercsvRoute);
+app.use('/csv', importCsvFiles);
 const PORT = process.env.PORT || "4000"
 app.listen(PORT, () => console.log(`server running on port: ${PORT}`))
 

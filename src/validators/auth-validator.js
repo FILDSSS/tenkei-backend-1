@@ -2,11 +2,11 @@ const Joi = require("joi");
 
 // สร้าง registerSchema
 const registerSchema = Joi.object({
-    User_ID: Joi.string().required(),
-    User_Name: Joi.string().required(),
-    User_Abb: Joi.string().optional(),
-    User_Pass: Joi.string().required(),
-    User_Remark: Joi.string().allow('').optional(),
+    Worker_CD: Joi.string().required(),
+    Worker_Name: Joi.string().required(),
+    Worker_Abb: Joi.string().optional(),
+    Worker_Pass: Joi.string().required(),
+    Worker_Remark: Joi.string().allow('').optional(),
 });
 
 // สร้าง Joi schema สำหรับ permissions
@@ -24,8 +24,8 @@ const extendedRegisterSchema = registerSchema.append(permissionsSchema);
 
 // สร้าง schema สำหรับการล็อกอิน
 const loginSchema = Joi.object({
-    User_ID: Joi.string().required(),
-    User_Pass: Joi.string().required(),
+    Worker_CD: Joi.string().required(),
+    Worker_Pass: Joi.string().required(),
 });
 
 // สร้าง schema สำหรับการอัปเดต permissions

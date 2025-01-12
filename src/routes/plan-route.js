@@ -18,4 +18,5 @@ router.post("/delete-plan",tdPlanController.deletePlan);
 router.post("/delete-schedule",tdPlanController.deleteSchedule);
 router.post("/delete-result",tdPlanController.deleteResult);
 router.post("/delete-wip",tdPlanController.deleteWip);
+router.get("/fetch-all-plan",tdPlanController.getPlan);
 module.exports = router;

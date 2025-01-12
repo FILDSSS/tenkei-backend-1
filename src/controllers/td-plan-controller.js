@@ -2017,3 +2017,13 @@ exports.deletePlan = async (req, res, next) => {
     await prisma.$disconnect();
   }
 };
+
+exports.getPlan = async (req, res, next) => {
+  try {
+    const selectAllPlan = await prisma.tD_Plan.findMany();
+    return res.status(200).json({message: "Fetch TD_PLAN data successfully.",data: selectAllPlan})
+  } catch (error) {
+    console.error("Error deleting Plan:", error);
+    return next(createError(500, "Internal Server Error"));
+  }
+};

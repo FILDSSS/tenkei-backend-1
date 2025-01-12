@@ -19,6 +19,23 @@ exports.fetchProcessG = async (req, res, next) => {
   }
 };
 
+exports.fetchTtProcessG = async (req, res, next) => {
+  try {
+    const ttprocessg = await prisma.tT_ProcessG.findMany();
+
+    // ส่งข้อมูลทั้งหมดกลับไปยังผู้ใช้
+    return res.status(200).json({
+      status: "success",
+      data: {
+        processg: ttprocessg,
+      },
+    });
+  } catch (err) {
+    console.error("Error searching ttprocessG:", err);
+    return next(createError(500, "Internal Server Error"));
+  }
+};
+
 exports.updateProcessg = async (req, res, next) => {
   try {
     // ตรวจสอบข้อมูล

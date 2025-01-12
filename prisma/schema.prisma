@@ -2558,7 +2558,7 @@ model TT_NAV_Od_WI {
 }
 
 model TT_NAV_Pc_CSV {
-  id              Int       @id @default(autoincrement()) @db.Int
+  // id              Int       @id @default(autoincrement()) @db.Int
   Procure_No      String?   @db.VarChar(20)
   Vendor_CD       String?   @db.VarChar(20)
   Pc_Date         DateTime? @db.DateTime
@@ -2578,7 +2578,7 @@ model TT_NAV_Pc_CSV {
   Pc_NAV_Upd_Date DateTime? @db.DateTime
   Pc_Progress_CD  String?   @db.VarChar(2)
   OdPc_No         String?   @db.VarChar(40)
-  OdPcLn_No       String?   @db.VarChar(46)
+  OdPcLn_No       String    @id @db.VarChar(46) // Primary key
 }
 
 model TT_NAV_Pc_CSV_Upd {

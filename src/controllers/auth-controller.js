@@ -76,11 +76,11 @@ exports.login = async (req, res, next) => {
             return next(createError(400, error.details[0].message)); // ส่งข้อผิดพลาดกลับไป
         }
 
-        const { User_ID, User_Pass } = value; // ดึง User_ID และ User_Pass ออกจาก value
+        const { Worker_CD, Worker_Pass } = value; // ดึง User_ID และ User_Pass ออกจาก value
 
         // ตรวจสอบว่าผู้ใช้มีอยู่ในฐานข้อมูลหรือไม่
-        const existingUser = await prisma.tM_User.findUnique({
-            where: { User_ID },
+        const existingUser = await prisma.tM_Worker.findUnique({
+            where: { Worker_CD },
         });
         if (!existingUser) {
             return next(createError(400, "Invalid credentials.")); // ข้อความที่ถูกต้อง
@@ -92,11 +92,11 @@ exports.login = async (req, res, next) => {
         // if (existingUser.User_Pass.startsWith("$2b$")) { // ตรวจสอบว่ารหัสผ่านถูกเข้ารหัสด้วย bcrypt หรือไม่
 
         // ตรวจสอบว่ารหัสผ่านถูกเข้ารหัสด้วย bcrypt หรือไม่ ยอมรับทั้ง $2b$ และ $2a$
-        if (existingUser.User_Pass.startsWith('$2a$') || existingUser.User_Pass.startsWith('$2b$')) { 
-            isMatch = await bcrypt.compare(User_Pass, existingUser.User_Pass);
+        if (existingUser.Worker_Pass.startsWith('$2a$') || existingUser.Worker_Pass.startsWith('$2b$')) { 
+            isMatch = await bcrypt.compare(Worker_Pass, existingUser.Worker_Pass);
         } else {
             // ตรวจสอบรหัสผ่านแบบไม่เข้ารหัส
-            isMatch = User_Pass === existingUser.User_Pass;
+            isMatch = Worker_Pass === existingUser.Worker_Pass;
         }
 
         if (!isMatch) {
@@ -104,7 +104,7 @@ exports.login = async (req, res, next) => {
         }
 
         // สร้าง JSON Web Token
-        const payload = { User_ID: existingUser.User_ID };
+        const payload = { Worker_CD: existingUser.Worker_CD };
         const accessToken = jwt.sign(
             payload,
             process.env.JWT_SECRET_KEY || "defaultRandom",
@@ -114,7 +114,7 @@ exports.login = async (req, res, next) => {
         );
 
         // ลบรหัสผ่านออกจากข้อมูลผู้ใช้ก่อนส่งกลับ
-        delete existingUser.User_Pass;
+        delete existingUser.Worker_Pass;
 
         // ส่งข้อมูลกลับ
         res.status(200).json({ accessToken, user: existingUser }); // ส่งข้อมูลผู้ใช้ที่ไม่มีรหัสผ่าน
