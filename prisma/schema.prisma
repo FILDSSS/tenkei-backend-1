@@ -78,7 +78,7 @@ model TD_Order {
   Pd_Complete_Qty   Int?      @db.SmallInt
   I_Complete_Qty    Int?      @db.SmallInt
   Shipment_Qty      Int?      @db.SmallInt
-  Pd_Split_Qty      Int?      @db.SmallInt
+  Pd_Split_Qty      Int?      @db.SmallInt 
   Pd_Calc_Qty       Int?      @db.SmallInt
   NG_Qty            Int?      @db.SmallInt
   Unit_CD           String?   @db.VarChar(10)
@@ -2582,7 +2582,6 @@ model TT_NAV_Pc_CSV {
 }
 
 model TT_NAV_Pc_CSV_Upd {
-  id              Int       @id @default(autoincrement()) @db.Int
   Procure_No      String?   @db.VarChar(20)
   Vendor_CD       String?   @db.VarChar(20)
   Pc_Date         DateTime? @db.DateTime
@@ -2602,7 +2601,7 @@ model TT_NAV_Pc_CSV_Upd {
   Pc_NAV_Upd_Date DateTime? @db.DateTime
   Pc_Progress_CD  String?   @db.VarChar(2)
   OdPc_No         String?   @db.VarChar(40)
-  OdPcLn_No       String?   @db.VarChar(46)
+  OdPcLn_No       String    @id @db.VarChar(46) // Primary key
 }
 
 model TT_Pl_Quote {

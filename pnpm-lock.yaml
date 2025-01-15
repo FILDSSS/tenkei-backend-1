@@ -266,6 +266,7 @@ packages:
         optional: true
     dependencies:
       ms: 2.1.2
+    optionalDependencies:
       supports-color: 5.5.0
     dev: true
 
@@ -880,3 +881,5 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
     dev: false
+
+  xtend@4.0.2: {}

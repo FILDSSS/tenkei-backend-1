@@ -1498,6 +1498,8 @@ exports.createPlan = async (req, res, next) => {
       const newPlan = await prisma.tD_Plan.create({
         data: {
           ...planData,
+          Pl_St_Rev_Day:parseFloat(Pl_St_Rev_Day),
+          Pl_Ed_Rev_Day:parseFloat(Pl_Ed_Rev_Day),
           Pl_Upd_Date: new Date(),
           Pl_Reg_Date: new Date(),
         },
