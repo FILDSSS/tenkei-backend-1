@@ -193,6 +193,9 @@ exports.TsSet = async (req, res, next) => {
   }
 };
 
+
+
+
 exports.Schedule_Calc = async (req, res, next) => {
   try {
     const { Order_No, Parts_No } = req.body;
@@ -220,8 +223,8 @@ exports.Schedule_Calc = async (req, res, next) => {
       FG,
       M_Holiday;
     let PSL = new Array(36);
-    let Fix_Pr_N = new Array(36);
-    let Fix_Re_MH = new Array(36);
+    let Fix_Pr_N = new Array(36).fill(0);
+    let Fix_Re_MH = new Array(36).fill(0);
     let Fix_Date_No = new Array(36);
     let Fix_Date = new Array(36);
 
@@ -374,39 +377,48 @@ exports.Schedule_Calc = async (req, res, next) => {
         }
       }
 
-      while (N < Fix_N) {
+        while (N < Fix_N) {
         N += 1;
         //STEP1
-    
-        Holidays = await prisma.tM_Holiday.count({
-          where: {
-            Holiday: {
-              gte: new Date(Now_Date),
-              lte: new Date(Fix_Date[N]),
-            },
-          },
-        });
 
-        ReDays = Math.floor(
-          (new Date(Fix_Date[N]).getTime() - new Date(Now_Date).getTime()) /
-            (1000 * 60 * 60 * 24) -
-            Holidays
+        const sqlQuery = `
+        SELECT COUNT(*)
+        FROM TM_Holiday
+        WHERE Holiday >= ?
+          AND Holiday <= ?
+      `;
+
+        const rawCount = await prisma.$queryRawUnsafe(
+          sqlQuery,
+          new Date(Fix_Date[N]),
+          new Date(Now_Date)
         );
+        const holidayCount = rawCount[0]["COUNT(*)"];
+        Holidays = parseInt(holidayCount, 10);
+        ReDays =
+          Math.floor(
+            (new Date(Fix_Date[N]).getTime() - new Date(Now_Date).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) - Holidays;
 
         MinDays = Fix_Re_MH[N] / 1440;
         No = Now_No - 1;
         Temp_Date = Now_Date;
-       
-        STEP1: while (No < Fix_Date_No[N]) {
+        console.log("Holidays:", Holidays);
+        console.log("ReDays:", ReDays);
+        console.log("MinDays:", MinDays);
+        console.log("No:", No);
+        console.log("Temp_Date:", Temp_Date);
+
+        while (No < Fix_Date_No[N]) {
           No += 1;
           if (req.body[`RPD${No}`] === null) {
             Temp_Date = new Date(
-              Temp_Date.getTime() +
-                ((PSL[No] / 1440) * Sc_Scale + St_Rev) * 86400000
+              Temp_Date + ((PSL[No] / 1440) * Sc_Scale + St_Rev) * 86400000
             );
 
             FG = 0;
-            console.log("PPD",Temp_Date)
+
             while (FG < 1) {
               const holidayCount = await prisma.tM_Holiday.count({
                 where: {
@@ -416,6 +428,7 @@ exports.Schedule_Calc = async (req, res, next) => {
                   },
                 },
               });
+
               if (holidayCount > 0) {
                 M_Holiday = holidayCount;
                 while (M_Holiday > 0) {
@@ -486,6 +499,7 @@ exports.Schedule_Calc = async (req, res, next) => {
                   req.body[`PPD${No}`] = selectedPPD[1];
                 }
 
+             
                 const holidayCount = await prisma.tM_Holiday.count({
                   where: {
                     Holiday: new Date(req.body[`PPD${No}`]),
@@ -493,7 +507,6 @@ exports.Schedule_Calc = async (req, res, next) => {
                 });
 
                 if (holidayCount !== 0) {
-                  console.log("PPD", req.body[`PPD${No}`]);
                   res.json({
                     message: `Can not setting [process plan date] = [Holiday] !`,
                     confirm: true,
@@ -538,12 +551,11 @@ exports.Schedule_Calc = async (req, res, next) => {
                         },
                       },
                     });
-                    ReDays = Math.floor(
-                      (new Date(Fix_Date[N]).getTime() -
-                        new Date(Now_Date).getTime()) /
-                        (1000 * 60 * 60 * 24) -
-                        Holidays
-                    );
+                    ReDays =
+                    Math.floor(
+                      (new Date(Fix_Date[N]).getTime() - new Date(Now_Date).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    ) - Holidays;
 
                     St_Rev = ReDays / (Fix_Re_MH[N] / 1440);
                     St_Rev = 0;
@@ -557,11 +569,10 @@ exports.Schedule_Calc = async (req, res, next) => {
                       },
                     });
                     ReDays =
-                      Math.ceil(
-                        (new Date(Fix_Date[N]).getTime() -
-                          new Date(Final_Date).getTime()) /
-                          (1000 * 60 * 60 * 24)
-                      ) - Holidays;
+                    Math.floor(
+                      (new Date(Fix_Date[N]).getTime() - new Date(Now_Date).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    ) - Holidays;
 
                     Sc_Scale = 1;
                     St_Rev = (ReDays - MinDays) / Fix_Pr_N[N];
@@ -569,13 +580,27 @@ exports.Schedule_Calc = async (req, res, next) => {
                 }
                 Now_No = Final_No + 1;
                 Now_Date = Final_Date;
-                //Go TO STEP1
-               
-                continue STEP1;
-           
-            
-                
+                Holidays = parseInt(holidayCount, 10);
+                ReDays =
+                Math.floor(
+                  (new Date(Fix_Date[N]).getTime() - new Date(Now_Date).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                ) - Holidays;
+
+        
+                MinDays = Fix_Re_MH[N] / 1440;
+        No = Now_No - 1;
+        Temp_Date = Now_Date;
+                console.log("Holidays:", Holidays);
+        console.log("ReDays:", ReDays);
+        console.log("MinDays:", MinDays);
+        console.log("No:", No);
+        console.log("Temp_Date:", Temp_Date);
+        console.log("Sc_Scale:", Sc_Scale);
+        console.log("St_Rev:", St_Rev);
+        
               } else {
+                
                 if (req.body[`PPD${No}`] != null) {
                   const fixDate = req.body[`PPD${No}`];
                   const holidayCount = await prisma.tM_Holiday.count({
@@ -626,7 +651,6 @@ exports.Schedule_Calc = async (req, res, next) => {
               Now_No = Final_No + 1;
               Now_Date = Final_Date;
               //GOTO STEP1
-          
             }
             Now_No = No + 1;
             Final_No = No;
@@ -635,8 +659,8 @@ exports.Schedule_Calc = async (req, res, next) => {
             Sc_Scale = 1;
             St_Rev = 0;
           }
+          
         }
-
         const PPDValues3 = Array.from({ length: 36 }, (_, i) => {
           const PPDKey = `PPD${i + 1}`;
           return [PPDKey, req.body[PPDKey] || null];
@@ -644,9 +668,10 @@ exports.Schedule_Calc = async (req, res, next) => {
         const scheduleData4 = {
           ...Object.fromEntries(PPDValues3),
         };
-       console.log("PPD",                                                                                                                                                             
-        scheduleData4)
+        console.log("PPD", scheduleData4);
+
       }
+
     }
   } catch (err) {
     console.error("Error Error occurs when Schedule_Calc_Click:", err);
@@ -2021,7 +2046,10 @@ exports.deletePlan = async (req, res, next) => {
 exports.getPlan = async (req, res, next) => {
   try {
     const selectAllPlan = await prisma.tD_Plan.findMany();
-    return res.status(200).json({message: "Fetch TD_PLAN data successfully.",data: selectAllPlan})
+    return res.status(200).json({
+      message: "Fetch TD_PLAN data successfully.",
+      data: selectAllPlan,
+    });
   } catch (error) {
     console.error("Error deleting Plan:", error);
     return next(createError(500, "Internal Server Error"));
